@@ -32,10 +32,9 @@ export const lambdaHandler = async (event: any): Promise<any> => {
     switch (firstEvent.type) {
       case 'message':
         const message = firstEvent.message.text.split(' ')[1];
-        const replyToken = firstEvent.replyToken;
         
         await lineClient.replyMessage({
-          replyToken: replyToken as string,
+          replyToken: firstEvent.replyToken as string,
           messages: [
             {
               type: 'template',
@@ -56,22 +55,15 @@ export const lambdaHandler = async (event: any): Promise<any> => {
           ]
         });
       case 'postback':
-        console.log('postback');
         const text = firstEvent.postback.data;
-        console.log(text);
         const userId = firstEvent.source.userId;
         
-        const aws_table_name = 'line-reminders';
-        const aws_local_config = {
-          //Provide details for local configuration
-        }
         const aws_remote_config = {
           accessKeyId: 'AKIAQFFDKRTMFDQMB624',
           secretAccessKey: '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',
           region: 'us-west-2',
         }
         
-        //AWS.config.update(aws_remote_config);
         const client = new DynamoDBClient({
           region: 'us-west-2' as string,
         });
@@ -84,19 +76,16 @@ export const lambdaHandler = async (event: any): Promise<any> => {
           }
         }
         const data = await dbDocClient.send(new PutCommand(params))
-        console.log(data)
-        /*
-        const docClient = new AWS.DynamoDB.DocumentClient();
-        const item = {
-          user_id: userId,
-          created_at: new Date().getTime().toString(),
-        }
-        var params = {
-          TableName: aws_table_name,
-          Item: item
-        };
-        */
-        //docClient.put(params)
+
+        await lineClient.replyMessage({
+          replyToken: firstEvent.replyToken as string,
+          messages: [
+            {
+              type: 'text',
+              text: `好, 我會提醒您 "${text}"`
+            }
+          ]
+        });
     }
   
 

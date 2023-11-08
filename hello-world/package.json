@@ -16,7 +16,8 @@
     "esbuild": "^0.14.14",
     "@line/bot-sdk": "^8.0.1",
     "@aws-sdk/lib-dynamodb": "^3.441.0",
-    "aws-lambda": "^1.0.7"
+    "aws-lambda": "^1.0.7",
+    "@upstash/qstash": "^2.1.11"
   },
   "devDependencies": {
     "@types/aws-sdk": "^2.7.0",

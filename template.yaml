@@ -15,12 +15,6 @@ Parameters:
     Type: String
   QstashToken:
     Type: String
-  AwsAccessKeyId:
-    Type: String
-  AwsSecretAccessKey:
-    Type: String
-  AwsRegion:
-    Type: String
 
 Resources:
   LineBotFunction:
@@ -31,13 +25,12 @@ Resources:
       Runtime: nodejs18.x
       Architectures:
         - x86_64
+      FunctionUrlConfig:
+        AuthType: NONE
       Environment:
         Variables:
           LINE_CHANNEL_ACCESS_TOKEN: !Ref LineChannelAccessToken
           QSTASH_TOKEN: !Ref QstashToken
-          AWS_ACCESS_KEY_ID: !Ref AwsAccessKeyId
-          AWS_SECRET_ACCESS_KEY: !Ref AwsSecretAccessKey
-          AWS_REGION: !Ref AwsRegion
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:

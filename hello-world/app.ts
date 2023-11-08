@@ -43,8 +43,11 @@ export const lambdaHandler = async (event: any): Promise<any> => {
         ]
       })
     } else {
-      const events = event["events"];
-      const firstEvent = events[0];
+      /*
+      body: '{"destination":"U1f7351b944cb4b8c52529beeff107717","events":[{"type":"postback","postback":{"data":"你好嗎","params":{"datetime":"2023-11-08T21:21"}},"webhookEventId":"01HEQ76MN3HQAGCWK1B7SZFVNS","deliveryContext":{"isRedelivery":false},"timestamp":1699438875261,"source":{"type":"user","userId":"Uf653f8e04aae9441cc3d8e6a41cfe28a"},"replyToken":"9636527508bd4885999d1698450a2188","mode":"active"}]}'
+      */
+      const jsonObject = JSON.parse(event.body);
+      const firstEvent = jsonObject.events[0];
       switch (firstEvent.type) {
         case 'message':
           const message = firstEvent.message.text.split(' ')[1];
@@ -81,9 +84,9 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             region: process.env.AWS_REGION,
           }
           */
-          
+          /*
           const client = new DynamoDBClient({
-            region: process.env.AWS_REGION as string,
+            region: 'us-west-2' as string,
           });
           const dbDocClient = DynamoDBDocumentClient.from(client);
           const params = {
@@ -93,6 +96,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
               created_at: 399999
             }
           }
+          */
           //const data = await dbDocClient.send(new PutCommand(params))
           /*
           const res = await qstashClient.publishJSON({

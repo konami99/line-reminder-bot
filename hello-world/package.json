@@ -17,7 +17,8 @@
     "@line/bot-sdk": "^8.0.1",
     "@aws-sdk/lib-dynamodb": "^3.441.0",
     "aws-lambda": "^1.0.7",
-    "@upstash/qstash": "^2.1.11"
+    "@upstash/qstash": "^2.1.11",
+    "luxon": "^3.4.3"
   },
   "devDependencies": {
     "@types/aws-sdk": "^2.7.0",
@@ -26,6 +27,7 @@
     "@types/node": "^18.11.4",
     "@typescript-eslint/eslint-plugin": "^5.10.2",
     "@typescript-eslint/parser": "^5.10.2",
+    "@types/luxon": "^3.3.4",
     "eslint": "^8.8.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",

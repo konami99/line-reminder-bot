@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, UpdateItemCommand, QueryCommand, Select } from "@aws-sdk/client-dynamodb";
 import { Client } from "@upstash/qstash";
 import { DateTime } from "luxon";
 import {
@@ -12,30 +12,29 @@ import {
 } from '@line/bot-sdk';
 import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
-
+/*
 const clientConfig: ClientConfig = {
   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN as string,
 };
+*/
 
-/*
+
 const clientConfig: ClientConfig = {
   channelAccessToken: '',
 };
-*/
+
 
 const lineClient = new messagingApi.MessagingApiClient(clientConfig);
 
-
+/*
 const qstashClient = new Client({
   token: process.env.QSTASH_TOKEN as string,
 });
+*/
 
-
-/*
 const qstashClient = new Client({
   token: '',
 });
-*/
 
 export const lambdaHandler = async (event: any): Promise<any> => {
   try {
@@ -44,15 +43,15 @@ export const lambdaHandler = async (event: any): Promise<any> => {
     /*
     production
     */
-    const jsonObject = JSON.parse(event.body);
+    //const jsonObject = JSON.parse(event.body);
     
 
     /*
     local
     */
-    //const events = event["events"];
-    //const firstEvent = events[0];
-    //const jsonObject = firstEvent;
+    const events = event["events"];
+    const firstEvent = events[0];
+    const jsonObject = firstEvent;
     
     if (jsonObject?.type === 'qstash') {
       lineClient.pushMessage({
@@ -94,7 +93,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
       /*
       production
       */
-      const firstEvent = jsonObject.events[0];
+      //const firstEvent = jsonObject.events[0];
       
 
       /*
@@ -105,34 +104,68 @@ export const lambdaHandler = async (event: any): Promise<any> => {
       
       switch (firstEvent.type) {
         case 'message':
-          const message = firstEvent.message.text.split(' ')[1];
-          
-          await lineClient.replyMessage({
-            replyToken: firstEvent.replyToken as string,
-            messages: [
-              {
-                type: 'template',
-                altText: 'Confirm alt text',
-                template: {
-                  type: 'buttons',
-                  text: `要什麼時候提醒您 "${message}"?`,
-                  actions: [
-                    { 
-                      type: 'datetimepicker',
-                      label: '點我選擇時間',
-                      data: message,
-                      mode: 'datetime'
-                    },
-                  ],
-                },
-              }
-            ]
+          const userId = firstEvent.source.userId;
+          const queryItemParams = {
+            TableName: 'line-reminders',
+            IndexName: 'UseridStatusIndex', // Replace with your GSI name
+            KeyConditionExpression: 'user_id = :uid AND #status = :status', // Define your conditions
+            ExpressionAttributeNames: {
+              '#status': 'status', // Replace 'status' with the attribute in the GSI
+            },
+            ExpressionAttributeValues: {
+              ':uid': { 'S': userId},
+              ':status': { 'S': 'scheduled'}, // Replace with the status value you're querying
+            },
+            Select: Select.COUNT
+          };
+
+          const getClient = new DynamoDBClient({
+            region: 'us-west-2' as string,
           });
+          //const dbDocClient = DynamoDBDocumentClient.from(client);
+          //const data = await dbDocClient.send(new UpdateCommand(params));
+          const numberOfItems = await getClient.send(new QueryCommand(queryItemParams))
+
+          if (numberOfItems.Count != undefined && (numberOfItems.Count < 3)) {
+            const message = firstEvent.message.text.split(' ')[1];
+            
+            await lineClient.replyMessage({
+              replyToken: firstEvent.replyToken as string,
+              messages: [
+                {
+                  type: 'template',
+                  altText: 'Confirm alt text',
+                  template: {
+                    type: 'buttons',
+                    text: `要什麼時候提醒您 "${message}"?`,
+                    actions: [
+                      { 
+                        type: 'datetimepicker',
+                        label: '點我選擇時間',
+                        data: message,
+                        mode: 'datetime'
+                      },
+                    ],
+                  },
+                }
+              ]
+            });
+          } else {
+            await lineClient.replyMessage({
+              replyToken: firstEvent.replyToken as string,
+              messages: [
+                {
+                  type: 'text',
+                  text: '您已經超過額度(3)'
+                }
+              ]
+            });
+          }
+          break;
         case 'postback':
           const text = firstEvent.postback.data;
           const time = firstEvent.postback.params.datetime //2023-11-05T19:48
-          const userId = firstEvent.source.userId;
-
+          const newUserId = firstEvent.source.userId;
 
           /*
           time = '2023-11-05T19:48'
@@ -147,7 +180,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
           const params = {
             TableName: 'line-reminders',
             Item: {
-              user_id: userId,
+              user_id: newUserId,
               created_at,
               scheduled_at: timeWithZone.toSeconds(),
               status: 'scheduled',
@@ -158,7 +191,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
 
           const data = await dbDocClient.send(new PutCommand(params))
           
-          
+          /*
           const res = await qstashClient.publishJSON({
             topic: "reminders-tw",
             notBefore: timeWithZone.toSeconds(),
@@ -169,7 +202,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
               text,
             },
           });
-          
+          */
           
           await lineClient.replyMessage({
             replyToken: firstEvent.replyToken as string,
@@ -180,6 +213,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
               }
             ]
           });
+          break;
       }
     }
 

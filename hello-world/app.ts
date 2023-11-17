@@ -12,6 +12,7 @@ import {
 } from '@line/bot-sdk';
 import { DynamoDBDocumentClient, GetCommandOutput, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { DynamoDBCRUDs } from './dynamodbQueries';
+import { ulid } from "ulid"
 
 /*
 const clientConfig: ClientConfig = {
@@ -55,37 +56,21 @@ export const lambdaHandler = async (event: any): Promise<any> => {
     const jsonObject = firstEvent;
     
     if (jsonObject?.type === 'qstash') {
+      const userId = jsonObject.user_id;
+      const reminderId = jsonObject.reminder_id;
+      const message = jsonObject.text;
+
       lineClient.pushMessage({
-        to: jsonObject.user_id,
+        to: userId,
         messages: [
           {
             type: 'text',
-            text: `提醒您: ${jsonObject.text}`
+            text: `提醒您: ${message}`
           }
         ]
       })
 
-      const params = {
-        TableName: 'line-reminders',
-        Key: {
-          user_id: { 'S': jsonObject.user_id }, // The key of the item to update
-          created_at: { 'N': `${jsonObject.created_at}` },
-        },
-        UpdateExpression: 'SET #status = :newStatus', // Define the update expression
-        ExpressionAttributeNames: {
-          '#status': 'status', // Replace 'status' with the attribute to update
-        },
-        ExpressionAttributeValues: {
-          ':newStatus': { 'S': 'sent' }, // Define the new value for the attribute
-        },
-      };
-
-      const client = new DynamoDBClient({
-        region: 'us-west-2' as string,
-      });
-      //const dbDocClient = DynamoDBDocumentClient.from(client);
-      //const data = await dbDocClient.send(new UpdateCommand(params));
-      await client.send(new UpdateItemCommand(params))
+      DynamoDBCRUDs.updateReminderStatus(userId, reminderId, 'sent')
     } else {
       /*
       body: '{"destination":"U1f7351b944cb4b8c52529beeff107717","events":[{"type":"postback","postback":{"data":"你好嗎","params":{"datetime":"2023-11-08T21:21"}},"webhookEventId":"01HEQ76MN3HQAGCWK1B7SZFVNS","deliveryContext":{"isRedelivery":false},"timestamp":1699438875261,"source":{"type":"user","userId":"Uf653f8e04aae9441cc3d8e6a41cfe28a"},"replyToken":"9636527508bd4885999d1698450a2188","mode":"active"}]}'
@@ -107,10 +92,13 @@ export const lambdaHandler = async (event: any): Promise<any> => {
         case 'message':
           const userId = firstEvent.source.userId;
           
-          //const numberOfItems = await DynamoDBCRUDs.scheduledRemindersCount(userId)
-          
-          //if (numberOfItems.Count != undefined && (numberOfItems.Count < 3)) {
-          if (1 == 1) {
+          const numberOfItems = await DynamoDBCRUDs.scheduledRemindersCount(userId)
+
+          //console.log('-------------------------------');
+          //console.log(userId);
+          //console.log(numberOfItems.Count);
+
+          if (numberOfItems.Count != undefined && (numberOfItems.Count < 3)) {
             const message = firstEvent.message.text.split(' ')[1];
             
             await lineClient.replyMessage({
@@ -158,11 +146,16 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             await DynamoDBCRUDs.insertUser(newUserId)
           }
 
+          const reminderId = ulid();
+
           await DynamoDBCRUDs.insertReminder(
             newUserId,
+            reminderId,
             text,
             timeWithZone.toSeconds(),
           )
+
+          await DynamoDBCRUDs.updateUserRemindersCount(newUserId, 1)
           /*
           const res = await qstashClient.publishJSON({
             topic: "reminders-tw",
@@ -170,6 +163,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             body: {
               type: 'qstash',
               user_id: userId,
+              reminder_id: reminderId,
               created_at,
               text,
             },

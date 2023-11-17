@@ -54,7 +54,7 @@ export class DynamoDBCRUDs {
     return data;
   }
 
-  static async insertReminder(userId: string, message: string, scheduled_at: number) {
+  static async insertReminder(userId: string, reminderId: string, message: string, scheduled_at: number) {
     const client = new DynamoDBClient({
       region: 'us-west-2' as string,
     });
@@ -65,9 +65,10 @@ export class DynamoDBCRUDs {
       TableName: 'line-reminders',
       Item: {
         pk: `UR#${userId}`,
-        sk: `REMINDER#${ulid()}`,
-        gs1pk: `UR#${userId}`,
-        gs1sk: 'scheduled',
+        sk: `REMINDER#${reminderId}`,
+        gsi1pk: `UR#${userId}`,
+        gsi1sk: 'scheduled',
+        message,
         scheduled_at,
         created_at,
       },
@@ -79,14 +80,11 @@ export class DynamoDBCRUDs {
   static async scheduledRemindersCount(userId: string): Promise<QueryCommandOutput> {
     const queryItemParams = {
       TableName: 'line-reminders',
-      IndexName: 'UseridStatusIndex', // Replace with your GSI name
-      KeyConditionExpression: 'user_id = :uid AND #status = :status', // Define your conditions
-      ExpressionAttributeNames: {
-        '#status': 'status', // Replace 'status' with the attribute in the GSI
-      },
+      IndexName: 'gsi1pk-gsi1sk-index', // Replace with your GSI name
+      KeyConditionExpression: 'gsi1pk = :gsi1pk AND gsi1sk = :gsi1sk', // Define your conditions
       ExpressionAttributeValues: {
-        ':uid': { 'S': userId},
-        ':status': { 'S': 'scheduled'}, // Replace with the status value you're querying
+        ':gsi1pk': { 'S': `UR#${userId}` },
+        ':gsi1sk': { 'S': 'scheduled' }, // Replace with the status value you're querying
       },
       Select: Select.COUNT
     };
@@ -98,5 +96,32 @@ export class DynamoDBCRUDs {
     //const data = await dbDocClient.send(new UpdateCommand(params));
     const numberOfItems = await getClient.send(new QueryCommand(queryItemParams))
     return numberOfItems;
+  }
+
+  static async updateReminderStatus(userId: string, reminderId: string, status: string) {
+    const params = {
+      TableName: 'line-reminders',
+      Key: {
+        pk: { 'S': `UR#${userId}` },
+        sk: { 'S': `REMINDER#${reminderId}` },
+      },
+      UpdateExpression: 'SET #status = :newStatus',
+      ExpressionAttributeNames: {
+        '#status': 'status',
+      },
+      ExpressionAttributeValues: {
+        ':newStatus': { 'S': status },
+      },
+    };
+
+    const client = new DynamoDBClient({
+      region: 'us-west-2' as string,
+    });
+
+    await client.send(new UpdateItemCommand(params))
+  }
+
+  static async updateUserRemindersCount(userId: string, incrementBy: number) {
+
   }
 }

@@ -99,7 +99,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
           console.log(getUser);
           console.log(getUser.Item?.scheduled_reminders_count < 3);
 
-          if (getUser.Item == undefined || getUser.Item?.scheduled_reminders_count < 3) {
+          if (!getUser.Item || getUser.Item?.scheduled_reminders_count < 3) {
             const message = firstEvent.message.text.split(' ')[1];
             
             await lineClient.replyMessage({
@@ -156,7 +156,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             timeWithZone.toSeconds(),
           )
 
-          await DynamoDBCRUDs.updateUserRemindersCount(newUserId, '1')
+          await DynamoDBCRUDs.updateUserRemindersCount(newUserId, 1)
           
           /*
           const res = await qstashClient.publishJSON({

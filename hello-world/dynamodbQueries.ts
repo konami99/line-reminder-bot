@@ -119,7 +119,7 @@ export class DynamoDBCRUDs {
     await client.send(new UpdateItemCommand(params))
   }
 
-  static async updateUserRemindersCount(userId: string, incrementBy: string) {
+  static async updateUserRemindersCount(userId: string, incrementBy: number) {
     const params = {
       TableName: 'line-reminders',
       Key: {
@@ -128,7 +128,7 @@ export class DynamoDBCRUDs {
       },
       UpdateExpression: 'SET scheduled_reminders_count = scheduled_reminders_count + :inc',
       ExpressionAttributeValues: {
-        ':inc': { 'N': incrementBy },
+        ':inc': { 'N': incrementBy.toString() },
       },
     };
 

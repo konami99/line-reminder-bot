@@ -11,6 +11,7 @@ import {
   webhook,
 } from '@line/bot-sdk';
 import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBCRUDs } from './dynamodbQueries';
 
 /*
 const clientConfig: ClientConfig = {
@@ -105,27 +106,9 @@ export const lambdaHandler = async (event: any): Promise<any> => {
       switch (firstEvent.type) {
         case 'message':
           const userId = firstEvent.source.userId;
-          const queryItemParams = {
-            TableName: 'line-reminders',
-            IndexName: 'UseridStatusIndex', // Replace with your GSI name
-            KeyConditionExpression: 'user_id = :uid AND #status = :status', // Define your conditions
-            ExpressionAttributeNames: {
-              '#status': 'status', // Replace 'status' with the attribute in the GSI
-            },
-            ExpressionAttributeValues: {
-              ':uid': { 'S': userId},
-              ':status': { 'S': 'scheduled'}, // Replace with the status value you're querying
-            },
-            Select: Select.COUNT
-          };
-
-          const getClient = new DynamoDBClient({
-            region: 'us-west-2' as string,
-          });
-          //const dbDocClient = DynamoDBDocumentClient.from(client);
-          //const data = await dbDocClient.send(new UpdateCommand(params));
-          const numberOfItems = await getClient.send(new QueryCommand(queryItemParams))
-
+          
+          const numberOfItems = await DynamoDBCRUDs.scheduledRemindersCount(userId)
+          
           if (numberOfItems.Count != undefined && (numberOfItems.Count < 3)) {
             const message = firstEvent.message.text.split(' ')[1];
             

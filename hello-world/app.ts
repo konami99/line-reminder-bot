@@ -92,13 +92,14 @@ export const lambdaHandler = async (event: any): Promise<any> => {
         case 'message':
           const userId = firstEvent.source.userId;
           
-          const numberOfItems = await DynamoDBCRUDs.scheduledRemindersCount(userId)
+          const getUser: GetCommandOutput = await DynamoDBCRUDs.getUser(userId)
 
-          //console.log('-------------------------------');
+          console.log('-------------------------------');
           //console.log(userId);
-          //console.log(numberOfItems.Count);
+          console.log(getUser);
+          console.log(getUser.Item?.scheduled_reminders_count < 3);
 
-          if (numberOfItems.Count != undefined && (numberOfItems.Count < 3)) {
+          if (getUser.Item == undefined || getUser.Item?.scheduled_reminders_count < 3) {
             const message = firstEvent.message.text.split(' ')[1];
             
             await lineClient.replyMessage({
@@ -155,7 +156,8 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             timeWithZone.toSeconds(),
           )
 
-          await DynamoDBCRUDs.updateUserRemindersCount(newUserId, 1)
+          await DynamoDBCRUDs.updateUserRemindersCount(newUserId, '1')
+          
           /*
           const res = await qstashClient.publishJSON({
             topic: "reminders-tw",
@@ -164,7 +166,6 @@ export const lambdaHandler = async (event: any): Promise<any> => {
               type: 'qstash',
               user_id: userId,
               reminder_id: reminderId,
-              created_at,
               text,
             },
           });

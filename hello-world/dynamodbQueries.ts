@@ -92,8 +92,6 @@ export class DynamoDBCRUDs {
     const getClient = new DynamoDBClient({
       region: 'us-west-2' as string,
     });
-    //const dbDocClient = DynamoDBDocumentClient.from(client);
-    //const data = await dbDocClient.send(new UpdateCommand(params));
     const numberOfItems = await getClient.send(new QueryCommand(queryItemParams))
     return numberOfItems;
   }
@@ -121,7 +119,23 @@ export class DynamoDBCRUDs {
     await client.send(new UpdateItemCommand(params))
   }
 
-  static async updateUserRemindersCount(userId: string, incrementBy: number) {
+  static async updateUserRemindersCount(userId: string, incrementBy: string) {
+    const params = {
+      TableName: 'line-reminders',
+      Key: {
+        pk: { 'S': `USER#${userId}` },
+        sk: { 'S': `USER#${userId}` },
+      },
+      UpdateExpression: 'SET scheduled_reminders_count = scheduled_reminders_count + :inc',
+      ExpressionAttributeValues: {
+        ':inc': { 'N': incrementBy },
+      },
+    };
 
+    const client = new DynamoDBClient({
+      region: 'us-west-2' as string,
+    });
+
+    await client.send(new UpdateItemCommand(params))
   }
 }

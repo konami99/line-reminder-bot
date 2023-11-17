@@ -10,7 +10,7 @@ import {
   MiddlewareConfig,
   webhook,
 } from '@line/bot-sdk';
-import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommandOutput, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { DynamoDBCRUDs } from './dynamodbQueries';
 
 /*
@@ -107,9 +107,10 @@ export const lambdaHandler = async (event: any): Promise<any> => {
         case 'message':
           const userId = firstEvent.source.userId;
           
-          const numberOfItems = await DynamoDBCRUDs.scheduledRemindersCount(userId)
+          //const numberOfItems = await DynamoDBCRUDs.scheduledRemindersCount(userId)
           
-          if (numberOfItems.Count != undefined && (numberOfItems.Count < 3)) {
+          //if (numberOfItems.Count != undefined && (numberOfItems.Count < 3)) {
+          if (1 == 1) {
             const message = firstEvent.message.text.split(' ')[1];
             
             await lineClient.replyMessage({
@@ -149,31 +150,19 @@ export const lambdaHandler = async (event: any): Promise<any> => {
           const text = firstEvent.postback.data;
           const time = firstEvent.postback.params.datetime //2023-11-05T19:48
           const newUserId = firstEvent.source.userId;
-
-          /*
-          time = '2023-11-05T19:48'
-          */
           const timeWithZone = DateTime.fromFormat(time, "yyyy-MM-dd'T'HH:mm", { zone: 'Australia/Sydney'} )
           
-          const client = new DynamoDBClient({
-            region: 'us-west-2' as string,
-          });
-          const dbDocClient = DynamoDBDocumentClient.from(client);
-          const created_at = parseInt(new Date().getTime().toString())
-          const params = {
-            TableName: 'line-reminders',
-            Item: {
-              user_id: newUserId,
-              created_at,
-              scheduled_at: timeWithZone.toSeconds(),
-              status: 'scheduled',
-              message: text,
-            }
+          const getUserResult: GetCommandOutput = await DynamoDBCRUDs.getUser(newUserId)
+          
+          if (!getUserResult.Item) {
+            await DynamoDBCRUDs.insertUser(newUserId)
           }
-          
 
-          const data = await dbDocClient.send(new PutCommand(params))
-          
+          await DynamoDBCRUDs.insertReminder(
+            newUserId,
+            text,
+            timeWithZone.toSeconds(),
+          )
           /*
           const res = await qstashClient.publishJSON({
             topic: "reminders-tw",

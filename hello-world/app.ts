@@ -186,26 +186,33 @@ export const lambdaHandler = async (event: any): Promise<any> => {
 
           const postbackData = firstEvent.postback.data;
           const resultObject = stringToHash(postbackData);
+          console.log(resultObject);
 
           if (resultObject.action != undefined && resultObject.action == 'edit_reminder') {
             console.log('edit');
             const reminder = await DynamoDBCRUDs.getReminder(resultObject.pk, resultObject.sk);
             console.log(reminder);
+            const userId = reminder.Item?.pk.S?.split('#')[1] as string;
+            const reminderId = reminder.Item?.sk.S?.split('#')[1] as string;
+            const seconds = reminder.Item?.scheduled_at.N
+            const secondsToZone = DateTime.fromSeconds(parseInt(seconds)).setZone('Australia/Sydney')
+            const formattedSecondsToZone = secondsToZone.toFormat('dd/MM H:mm');
 
             await lineClient.pushMessage({
-              to: reminder.Item?.pk.S?.split('#')[1] as string,
+              to: userId,
               messages: [
                 {
                   type: 'template',
                   altText: 'Confirm alt text',
                   template: {
                     type: 'buttons',
-                    text: reminder.Item?.message.S,
+                    text: `${reminder.Item?.message.S} 在${formattedSecondsToZone}`,
                     actions: [
                       {
                         type: 'postback',
                         label: '完成',
-                        data: `test`
+                        displayText: '完成',
+                        data: `action=update_reminder_status&user_id=${userId}&reminder_id=${reminderId}&status=completed`
                       }
                     ]
                   }

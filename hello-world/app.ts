@@ -38,6 +38,17 @@ const qstashClient = new Client({
   token: '',
 });
 
+const stringToHash = (input: string) => {
+  const pairs = input.split('&');
+  var resultObject: Record<string, string> = {};
+
+  for (var i = 0; i < pairs.length; i++) {
+    var pair = pairs[i].split('=');
+    resultObject[pair[0]] = pair[1];
+  }
+  return resultObject;
+}
+
 export const lambdaHandler = async (event: any): Promise<any> => {
   try {
     console.log(event);
@@ -123,7 +134,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                         return {
                           type: 'postback',
                           label: `${item.message.S.substring(0, 5)}...(${formattedSecondsToZone})`,
-                          data: `mmm`
+                          data: `action=edit_reminder&pk=${item.pk.S}&sk=${item.sk.S}`
                         }
                       })
                     }
@@ -171,50 +182,83 @@ export const lambdaHandler = async (event: any): Promise<any> => {
           }
           break;
         case 'postback':
-          const text = firstEvent.postback.data;
-          const time = firstEvent.postback.params.datetime //2023-11-05T19:48
-          const newUserId = firstEvent.source.userId;
-          const timeWithZone = DateTime.fromFormat(time, "yyyy-MM-dd'T'HH:mm", { zone: 'Australia/Sydney'} )
-          
-          const getUserResult: GetCommandOutput = await DynamoDBCRUDs.getUser(newUserId)
-          
-          if (!getUserResult.Item) {
-            await DynamoDBCRUDs.insertUser(newUserId)
-          }
+          console.log(firstEvent);
 
-          const reminderId = ulid();
+          const postbackData = firstEvent.postback.data;
+          const resultObject = stringToHash(postbackData);
 
-          await DynamoDBCRUDs.insertReminder(
-            newUserId,
-            reminderId,
-            text,
-            timeWithZone.toSeconds(),
-          )
+          if (resultObject.action != undefined && resultObject.action == 'edit_reminder') {
+            console.log('edit');
+            const reminder = await DynamoDBCRUDs.getReminder(resultObject.pk, resultObject.sk);
+            console.log(reminder);
 
-          await DynamoDBCRUDs.updateUserRemindersCount(newUserId, 1)
-          
-          /*
-          const res = await qstashClient.publishJSON({
-            topic: "reminders-tw",
-            notBefore: timeWithZone.toSeconds(),
-            body: {
-              type: 'qstash',
-              user_id: userId,
-              reminder_id: reminderId,
+            await lineClient.pushMessage({
+              to: reminder.Item?.pk.S?.split('#')[1] as string,
+              messages: [
+                {
+                  type: 'template',
+                  altText: 'Confirm alt text',
+                  template: {
+                    type: 'buttons',
+                    text: reminder.Item?.message.S,
+                    actions: [
+                      {
+                        type: 'postback',
+                        label: '完成',
+                        data: `test`
+                      }
+                    ]
+                  }
+                }
+              ]
+            })
+
+          } else {
+            const text = firstEvent.postback.data;
+            const time = firstEvent.postback.params.datetime //2023-11-05T19:48
+            const newUserId = firstEvent.source.userId;
+            const timeWithZone = DateTime.fromFormat(time, "yyyy-MM-dd'T'HH:mm", { zone: 'Australia/Sydney'} )
+            
+            const getUserResult: GetCommandOutput = await DynamoDBCRUDs.getUser(newUserId)
+            
+            if (!getUserResult.Item) {
+              await DynamoDBCRUDs.insertUser(newUserId)
+            }
+
+            const reminderId = ulid();
+
+            await DynamoDBCRUDs.insertReminder(
+              newUserId,
+              reminderId,
               text,
-            },
-          });
-          */
-          
-          await lineClient.replyMessage({
-            replyToken: firstEvent.replyToken as string,
-            messages: [
-              {
-                type: 'text',
-                text: `好, 我會提醒您 "${text}"`
-              }
-            ]
-          });
+              timeWithZone.toSeconds(),
+            )
+
+            await DynamoDBCRUDs.updateUserRemindersCount(newUserId, 1)
+            
+            /*
+            const res = await qstashClient.publishJSON({
+              topic: "reminders-tw",
+              notBefore: timeWithZone.toSeconds(),
+              body: {
+                type: 'qstash',
+                user_id: userId,
+                reminder_id: reminderId,
+                text,
+              },
+            });
+            */
+            
+            await lineClient.replyMessage({
+              replyToken: firstEvent.replyToken as string,
+              messages: [
+                {
+                  type: 'text',
+                  text: `好, 我會提醒您 "${text}"`
+                }
+              ]
+            });
+          }
           break;
       }
     }

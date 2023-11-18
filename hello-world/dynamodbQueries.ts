@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DynamoDBClient, UpdateItemCommand, QueryCommand, Select } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, UpdateItemCommand, QueryCommand, Select, UpdateItemCommandInput, GetItemCommand, GetItemCommandInput, GetItemCommandOutput } from "@aws-sdk/client-dynamodb";
 import { Client } from "@upstash/qstash";
 import { DateTime } from "luxon";
 import {
@@ -77,14 +77,30 @@ export class DynamoDBCRUDs {
     const data = await dbDocClient.send(new PutCommand(params))
   }
 
+  static async getReminder(pk: string, sk: string): Promise<GetItemCommandOutput> {
+    const params: GetItemCommandInput = {
+      TableName: 'line-reminders',
+      Key: {
+        pk: { 'S': pk },
+        sk: { 'S': sk },
+      },
+    }
+
+    const getClient = new DynamoDBClient({
+      region: 'us-west-2' as string,
+    });
+    const reminder = await getClient.send(new GetItemCommand(params))
+    return reminder;
+  }
+
   static async scheduledReminders(userId: string): Promise<QueryCommandOutput> {
     const queryItemParams = {
       TableName: 'line-reminders',
-      IndexName: 'gsi1pk-gsi1sk-index', // Replace with your GSI name
-      KeyConditionExpression: 'gsi1pk = :gsi1pk AND gsi1sk = :gsi1sk', // Define your conditions
+      IndexName: 'gsi1pk-gsi1sk-index',
+      KeyConditionExpression: 'gsi1pk = :gsi1pk AND gsi1sk = :gsi1sk',
       ExpressionAttributeValues: {
         ':gsi1pk': { 'S': `UR#${userId}` },
-        ':gsi1sk': { 'S': 'scheduled' }, // Replace with the status value you're querying
+        ':gsi1sk': { 'S': 'scheduled' },
       },
     };
 
@@ -119,7 +135,7 @@ export class DynamoDBCRUDs {
   }
 
   static async updateUserRemindersCount(userId: string, incrementBy: number) {
-    const params = {
+    const params: UpdateItemCommandInput = {
       TableName: 'line-reminders',
       Key: {
         pk: { 'S': `USER#${userId}` },

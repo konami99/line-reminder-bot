@@ -81,7 +81,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
         ]
       })
 
-      DynamoDBCRUDs.updateReminderStatus(userId, reminderId, 'sent')
+      await DynamoDBCRUDs.updateReminderStatus(userId, reminderId, 'sent')
     } else {
       /*
       body: '{"destination":"U1f7351b944cb4b8c52529beeff107717","events":[{"type":"postback","postback":{"data":"你好嗎","params":{"datetime":"2023-11-08T21:21"}},"webhookEventId":"01HEQ76MN3HQAGCWK1B7SZFVNS","deliveryContext":{"isRedelivery":false},"timestamp":1699438875261,"source":{"type":"user","userId":"Uf653f8e04aae9441cc3d8e6a41cfe28a"},"replyToken":"9636527508bd4885999d1698450a2188","mode":"active"}]}'
@@ -188,13 +188,28 @@ export const lambdaHandler = async (event: any): Promise<any> => {
           const resultObject = stringToHash(postbackData);
           console.log(resultObject);
 
-          if (resultObject.action != undefined && resultObject.action == 'edit_reminder') {
+          if (resultObject.action != undefined && resultObject.action == 'update_reminder_status') {
+            console.log('update_reminder_status');
+
+            await DynamoDBCRUDs.updateReminderStatus(resultObject.user_id, resultObject.reminder_id, resultObject.status)
+
+            await lineClient.pushMessage({
+              to: resultObject.user_id,
+              messages: [
+                {
+                  type: 'text',
+                  text: '以標記為完成'
+                }
+              ]
+            })
+
+          } else if (resultObject.action != undefined && resultObject.action == 'edit_reminder') {
             console.log('edit');
             const reminder = await DynamoDBCRUDs.getReminder(resultObject.pk, resultObject.sk);
             console.log(reminder);
             const userId = reminder.Item?.pk.S?.split('#')[1] as string;
             const reminderId = reminder.Item?.sk.S?.split('#')[1] as string;
-            const seconds = reminder.Item?.scheduled_at.N
+            const seconds = reminder.Item?.scheduled_at.N as string;
             const secondsToZone = DateTime.fromSeconds(parseInt(seconds)).setZone('Australia/Sydney')
             const formattedSecondsToZone = secondsToZone.toFormat('dd/MM H:mm');
 

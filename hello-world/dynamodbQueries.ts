@@ -118,12 +118,9 @@ export class DynamoDBCRUDs {
         pk: { 'S': `UR#${userId}` },
         sk: { 'S': `REMINDER#${reminderId}` },
       },
-      UpdateExpression: 'SET #status = :newStatus',
-      ExpressionAttributeNames: {
-        '#status': 'status',
-      },
+      UpdateExpression: 'SET gsi1sk = :status',
       ExpressionAttributeValues: {
-        ':newStatus': { 'S': status },
+        ':status': { 'S': status },
       },
     };
 

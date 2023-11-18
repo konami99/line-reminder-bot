@@ -71,17 +71,24 @@ export const lambdaHandler = async (event: any): Promise<any> => {
       const reminderId = jsonObject.reminder_id;
       const message = jsonObject.text;
 
-      await lineClient.pushMessage({
-        to: userId,
-        messages: [
-          {
-            type: 'text',
-            text: `提醒您: ${message}`
-          }
-        ]
-      })
+      const reminder = await DynamoDBCRUDs.getReminder(
+        `UR#${userId}`,
+        `REMINDER#${reminderId}`
+      );
 
-      await DynamoDBCRUDs.updateReminderStatus(userId, reminderId, 'sent')
+      if (reminder.Item?.gsi1sk.S === 'scheduled') {
+        await lineClient.pushMessage({
+          to: userId,
+          messages: [
+            {
+              type: 'text',
+              text: `提醒您: ${message}`
+            }
+          ]
+        })
+
+        await DynamoDBCRUDs.updateReminderStatus(userId, reminderId, 'sent')
+      }
     } else {
       /*
       body: '{"destination":"U1f7351b944cb4b8c52529beeff107717","events":[{"type":"postback","postback":{"data":"你好嗎","params":{"datetime":"2023-11-08T21:21"}},"webhookEventId":"01HEQ76MN3HQAGCWK1B7SZFVNS","deliveryContext":{"isRedelivery":false},"timestamp":1699438875261,"source":{"type":"user","userId":"Uf653f8e04aae9441cc3d8e6a41cfe28a"},"replyToken":"9636527508bd4885999d1698450a2188","mode":"active"}]}'

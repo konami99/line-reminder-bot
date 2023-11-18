@@ -77,7 +77,7 @@ export class DynamoDBCRUDs {
     const data = await dbDocClient.send(new PutCommand(params))
   }
 
-  static async scheduledRemindersCount(userId: string): Promise<QueryCommandOutput> {
+  static async scheduledReminders(userId: string): Promise<QueryCommandOutput> {
     const queryItemParams = {
       TableName: 'line-reminders',
       IndexName: 'gsi1pk-gsi1sk-index', // Replace with your GSI name
@@ -86,14 +86,13 @@ export class DynamoDBCRUDs {
         ':gsi1pk': { 'S': `UR#${userId}` },
         ':gsi1sk': { 'S': 'scheduled' }, // Replace with the status value you're querying
       },
-      Select: Select.COUNT
     };
 
     const getClient = new DynamoDBClient({
       region: 'us-west-2' as string,
     });
-    const numberOfItems = await getClient.send(new QueryCommand(queryItemParams))
-    return numberOfItems;
+    const scheduledReminders = await getClient.send(new QueryCommand(queryItemParams))
+    return scheduledReminders;
   }
 
   static async updateReminderStatus(userId: string, reminderId: string, status: string) {

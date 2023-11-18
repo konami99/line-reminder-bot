@@ -60,7 +60,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
       const reminderId = jsonObject.reminder_id;
       const message = jsonObject.text;
 
-      lineClient.pushMessage({
+      await lineClient.pushMessage({
         to: userId,
         messages: [
           {
@@ -92,47 +92,79 @@ export const lambdaHandler = async (event: any): Promise<any> => {
         case 'message':
           const userId = firstEvent.source.userId;
           
-          const getUser: GetCommandOutput = await DynamoDBCRUDs.getUser(userId)
+          
 
           console.log('-------------------------------');
-          //console.log(userId);
-          console.log(getUser);
-          console.log(getUser.Item?.scheduled_reminders_count < 3);
-
-          if (!getUser.Item || getUser.Item?.scheduled_reminders_count < 3) {
-            const message = firstEvent.message.text.split(' ')[1];
+          console.log(firstEvent);
+          //console.log(getUser);
+          //console.log(getUser.Item?.scheduled_reminders_count < 3);
+          if (firstEvent.message.text.startsWith('/list')) {
+            const scheduledReminders = await DynamoDBCRUDs.scheduledReminders(userId);
+            //console.log(scheduledReminders);
+            scheduledReminders.Items?.map((item) => console.log(item.scheduled_at));
             
-            await lineClient.replyMessage({
-              replyToken: firstEvent.replyToken as string,
-              messages: [
-                {
-                  type: 'template',
-                  altText: 'Confirm alt text',
-                  template: {
-                    type: 'buttons',
-                    text: `要什麼時候提醒您 "${message}"?`,
-                    actions: [
-                      { 
-                        type: 'datetimepicker',
-                        label: '點我選擇時間',
-                        data: message,
-                        mode: 'datetime'
-                      },
-                    ],
-                  },
-                }
-              ]
-            });
-          } else {
-            await lineClient.replyMessage({
-              replyToken: firstEvent.replyToken as string,
-              messages: [
-                {
-                  type: 'text',
-                  text: '您已經超過額度(3)'
-                }
-              ]
-            });
+            
+            if (scheduledReminders.Items != undefined) {
+              const sortedScheduledReminders = scheduledReminders.Items.sort((item1, item2) => item1.scheduled_at.N - item2.scheduled_at.N);
+              
+              await lineClient.pushMessage({
+                to: userId,
+                messages: [
+                  {
+                    type: 'template',
+                    altText: 'Confirm alt text',
+                    template: {
+                      type: 'buttons',
+                      text: 'All scheduled reminders',
+                      actions: sortedScheduledReminders.map((item) => {
+                        return {
+                          type: 'postback',
+                          label: `${item.message.S}, ${item.scheduled_at.N}`,
+                          data: `mmm`
+                        }
+                      })
+                    }
+                  }
+                ]
+              })
+            }
+          } else if (firstEvent.message.text.startsWith('/remind ')) {
+            const getUser: GetCommandOutput = await DynamoDBCRUDs.getUser(userId)
+            if (!getUser.Item || getUser.Item?.scheduled_reminders_count < 3) {
+              const message = firstEvent.message.text.split(' ')[1];
+              
+              await lineClient.replyMessage({
+                replyToken: firstEvent.replyToken as string,
+                messages: [
+                  {
+                    type: 'template',
+                    altText: 'Confirm alt text',
+                    template: {
+                      type: 'buttons',
+                      text: `要什麼時候提醒您 "${message}"?`,
+                      actions: [
+                        { 
+                          type: 'datetimepicker',
+                          label: '點我選擇時間',
+                          data: message,
+                          mode: 'datetime'
+                        },
+                      ],
+                    },
+                  }
+                ]
+              });
+            } else {
+              await lineClient.replyMessage({
+                replyToken: firstEvent.replyToken as string,
+                messages: [
+                  {
+                    type: 'text',
+                    text: '您已經超過額度(3)'
+                  }
+                ]
+              });
+            }
           }
           break;
         case 'postback':

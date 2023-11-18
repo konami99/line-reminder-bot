@@ -115,11 +115,14 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                     altText: 'Confirm alt text',
                     template: {
                       type: 'buttons',
-                      text: 'All scheduled reminders',
+                      text: '所有的預約提醒',
                       actions: sortedScheduledReminders.map((item) => {
+                        const seconds = item.scheduled_at.N;
+                        const secondsToZone = DateTime.fromSeconds(parseInt(seconds)).setZone('Australia/Sydney')
+                        const formattedSecondsToZone = secondsToZone.toFormat('dd/MM H:mm');
                         return {
                           type: 'postback',
-                          label: `${item.message.S}, ${item.scheduled_at.N}`,
+                          label: `${item.message.S.substring(0, 5)}...(${formattedSecondsToZone})`,
                           data: `mmm`
                         }
                       })

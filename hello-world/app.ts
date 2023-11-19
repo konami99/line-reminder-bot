@@ -86,7 +86,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             }
           ]
         })
-
+        await DynamoDBCRUDs.updateUserRemindersCount(userId, -1)
         await DynamoDBCRUDs.updateReminderStatus(userId, reminderId, 'sent')
       }
     } else {
@@ -121,8 +121,19 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             //console.log(scheduledReminders);
             scheduledReminders.Items?.map((item) => console.log(item.scheduled_at));
             
-            
-            if (scheduledReminders.Items != undefined) {
+            console.log('>>>>>>>>>');
+            console.log(scheduledReminders)
+            if (scheduledReminders.Items != undefined && scheduledReminders.Items.length == 0) {
+              await lineClient.pushMessage({
+                to: userId,
+                messages: [
+                  {
+                    type: 'text',
+                    text: '無'
+                  }
+                ]
+              })
+            } else if (scheduledReminders.Items != undefined && scheduledReminders.Items.length > 0) {
               const sortedScheduledReminders = scheduledReminders.Items.sort((item1, item2) => item1.scheduled_at.N - item2.scheduled_at.N);
               
               await lineClient.pushMessage({
@@ -135,12 +146,12 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                       type: 'buttons',
                       text: '所有的預約提醒',
                       actions: sortedScheduledReminders.map((item) => {
-                        const seconds = item.scheduled_at.N;
+                        const seconds = item.scheduled_at.N as string;
                         const secondsToZone = DateTime.fromSeconds(parseInt(seconds)).setZone('Australia/Sydney')
                         const formattedSecondsToZone = secondsToZone.toFormat('dd/MM H:mm');
                         return {
                           type: 'postback',
-                          label: `${item.message.S.substring(0, 5)}...(${formattedSecondsToZone})`,
+                          label: `${item.message.S.substring(0, 3)}...(${formattedSecondsToZone})`,
                           data: `action=edit_reminder&pk=${item.pk.S}&sk=${item.sk.S}`
                         }
                       })
@@ -199,7 +210,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             console.log('update_reminder_status');
 
             await DynamoDBCRUDs.updateReminderStatus(resultObject.user_id, resultObject.reminder_id, resultObject.status)
-
+            await DynamoDBCRUDs.updateUserRemindersCount(resultObject.user_id, -1)
             await lineClient.pushMessage({
               to: resultObject.user_id,
               messages: [

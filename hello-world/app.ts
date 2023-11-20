@@ -20,11 +20,9 @@ const clientConfig: ClientConfig = {
 };
 */
 
-
 const clientConfig: ClientConfig = {
   channelAccessToken: '',
 };
-
 
 const lineClient = new messagingApi.MessagingApiClient(clientConfig);
 
@@ -282,7 +280,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
               notBefore: timeWithZone.toSeconds(),
               body: {
                 type: 'qstash',
-                user_id: userId,
+                user_id: newUserId,
                 reminder_id: reminderId,
                 text,
               },

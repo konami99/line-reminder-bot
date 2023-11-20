@@ -23,23 +23,25 @@ Resources:
       TableName: line-reminders
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: user_id
+        - AttributeName: pk
           AttributeType: S
-        - AttributeName: created_at
-          AttributeType: N
-        - AttributeName: status
+        - AttributeName: sk
+          AttributeType: S
+        - AttributeName: gsi1pk
+          AttributeType: S
+        - AttributeName: gsi1sk
           AttributeType: S
       KeySchema:
-        - AttributeName: user_id
+        - AttributeName: pk
           KeyType: HASH
-        - AttributeName: created_at
+        - AttributeName: sk
           KeyType: RANGE
       GlobalSecondaryIndexes:
-        - IndexName: UseridStatusIndex
+        - IndexName: gsi1pk-gsi1sk-index
           KeySchema:
-            - AttributeName: user_id
+            - AttributeName: gsi1pk
               KeyType: HASH
-            - AttributeName: status
+            - AttributeName: gsi1sk
               KeyType: RANGE
           Projection:
             ProjectionType: ALL

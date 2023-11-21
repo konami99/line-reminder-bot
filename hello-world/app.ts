@@ -156,7 +156,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
           console.log(firstEvent);
           //console.log(getUser);
           //console.log(getUser.Item?.scheduled_reminders_count < 3);
-          if (firstEvent.message.text.startsWith('/list')) {
+          if (firstEvent.message.text === 'list-reminders') {
             const scheduledReminders = await DynamoDBCRUDs.scheduledReminders(userId);
             //console.log(scheduledReminders);
             scheduledReminders.Items?.map((item) => console.log(item.scheduled_at));
@@ -164,8 +164,8 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             console.log('>>>>>>>>>');
             console.log(scheduledReminders)
             if (scheduledReminders.Items != undefined && scheduledReminders.Items.length == 0) {
-              await lineClient.pushMessage({
-                to: userId,
+              await lineClient.replyMessage({
+                replyToken: firstEvent.replyToken as string,
                 messages: [
                   {
                     type: 'text',
@@ -176,8 +176,8 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             } else if (scheduledReminders.Items != undefined && scheduledReminders.Items.length > 0) {
               const sortedScheduledReminders = scheduledReminders.Items.sort((item1, item2) => item1.scheduled_at.N - item2.scheduled_at.N);
               
-              await lineClient.pushMessage({
-                to: userId,
+              await lineClient.replyMessage({
+                replyToken: firstEvent.replyToken as string,
                 messages: [
                   {
                     type: 'template',
@@ -200,10 +200,21 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                 ]
               })
             }
-          } else if (firstEvent.message.text.startsWith('/remind ')) {
+          } else if (firstEvent.message.text === 'add-reminder') {
+            await lineClient.replyMessage({
+              replyToken: firstEvent.replyToken as string,
+              messages: [
+                {
+                  type: 'text',
+                  text: '請輸入提醒事項',
+                }
+              ]
+            });
+
+          } else {
             const getUser: GetCommandOutput = await DynamoDBCRUDs.getUser(userId)
             if (!getUser.Item || getUser.Item?.scheduled_reminders_count < 3) {
-              const message = firstEvent.message.text.split(' ')[1];
+              const message = firstEvent.message.text;
               
               await lineClient.replyMessage({
                 replyToken: firstEvent.replyToken as string,

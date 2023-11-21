@@ -60,32 +60,74 @@ export const lambdaHandler = async (event: any): Promise<any> => {
     /*
     local
     */
+
     const events = event["events"];
     const firstEvent = events[0];
     const jsonObject = firstEvent;
+
     
     if (jsonObject?.type === 'qstash') {
       const userId = jsonObject.user_id;
       const reminderId = jsonObject.reminder_id;
       const message = jsonObject.text;
+      const scheduledTimeInSeconds = jsonObject.scheduled_time_in_seconds;
+      const nextTimeInSeconds = jsonObject.next_time_in_seconds;
 
-      const reminder = await DynamoDBCRUDs.getReminder(
-        `UR#${userId}`,
-        `REMINDER#${reminderId}`
-      );
+      console.log('scheduledTimeInSeconds')
+      console.log(scheduledTimeInSeconds);
+      console.log('nextTimeInSeconds')
+      console.log(nextTimeInSeconds);
 
-      if (reminder.Item?.gsi1sk.S === 'scheduled') {
-        await lineClient.pushMessage({
-          to: userId,
-          messages: [
-            {
-              type: 'text',
-              text: `提醒您: ${message}`
-            }
-          ]
-        })
-        await DynamoDBCRUDs.updateUserRemindersCount(userId, -1)
-        await DynamoDBCRUDs.updateReminderStatus(userId, reminderId, 'sent')
+      if (scheduledTimeInSeconds === nextTimeInSeconds) {
+        const reminder = await DynamoDBCRUDs.getReminder(
+          `UR#${userId}`,
+          `REMINDER#${reminderId}`
+        );
+
+        if (reminder.Item?.gsi1sk.S === 'scheduled') {
+          await lineClient.pushMessage({
+            to: userId,
+            messages: [
+              {
+                type: 'text',
+                text: `提醒您: ${message}`
+              }
+            ]
+          })
+          await DynamoDBCRUDs.updateUserRemindersCount(userId, -1)
+          await DynamoDBCRUDs.updateReminderStatus(userId, reminderId, 'sent')
+        }
+      } else {
+        const timeDiff = scheduledTimeInSeconds - nextTimeInSeconds;
+        if (timeDiff > 604000) {
+          const next_time_in_seconds = nextTimeInSeconds + 604000;
+
+          await qstashClient.publishJSON({
+            topic: "reminders-tw",
+            notBefore: next_time_in_seconds,
+            body: {
+              type: 'qstash',
+              user_id: userId,
+              reminder_id: reminderId,
+              scheduled_time_in_seconds: scheduledTimeInSeconds,
+              next_time_in_seconds,
+              message,
+            },
+          });
+        } else {
+          await qstashClient.publishJSON({
+            topic: "reminders-tw",
+            notBefore: scheduledTimeInSeconds,
+            body: {
+              type: 'qstash',
+              user_id: userId,
+              reminder_id: reminderId,
+              scheduled_time_in_seconds: scheduledTimeInSeconds,
+              next_time_in_seconds: scheduledTimeInSeconds,
+              message,
+            },
+          });
+        }
       }
     } else {
       /*
@@ -274,18 +316,41 @@ export const lambdaHandler = async (event: any): Promise<any> => {
 
             await DynamoDBCRUDs.updateUserRemindersCount(newUserId, 1)
             
-            /*
-            const res = await qstashClient.publishJSON({
-              topic: "reminders-tw",
-              notBefore: timeWithZone.toSeconds(),
-              body: {
-                type: 'qstash',
-                user_id: newUserId,
-                reminder_id: reminderId,
-                text,
-              },
-            });
-            */
+            const currentTimeInSeconds = Math.round(new Date().getTime() / 1000);
+            const scheduledTimeInSeconds = timeWithZone.toSeconds();
+
+            //604800 = 168 hours
+            if (scheduledTimeInSeconds - currentTimeInSeconds > 604000) {
+              const next_time_in_seconds = currentTimeInSeconds + 604000;
+
+              await qstashClient.publishJSON({
+                topic: "reminders-tw",
+                notBefore: next_time_in_seconds,
+                body: {
+                  type: 'qstash',
+                  user_id: newUserId,
+                  reminder_id: reminderId,
+                  scheduled_time_in_seconds: scheduledTimeInSeconds,
+                  next_time_in_seconds,
+                  text,
+                },
+              });
+            } else {
+              await qstashClient.publishJSON({
+                topic: "reminders-tw",
+                notBefore: scheduledTimeInSeconds,
+                body: {
+                  type: 'qstash',
+                  user_id: newUserId,
+                  reminder_id: reminderId,
+                  scheduled_time_in_seconds: scheduledTimeInSeconds,
+                  next_time_in_seconds: scheduledTimeInSeconds,
+                  text,
+                },
+              });
+            }
+            
+            
             
             await lineClient.replyMessage({
               replyToken: firstEvent.replyToken as string,

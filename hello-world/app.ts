@@ -185,6 +185,10 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                     contents: {
                       type: "carousel",
                       contents: sortedScheduledReminders.map((item) => {
+                        const seconds = item.scheduled_at.N as string;
+                        const secondsToZone = DateTime.fromSeconds(parseInt(seconds)).setZone('Australia/Sydney')
+                        const formattedSecondsToZone = secondsToZone.toFormat('dd/MM H:mm');
+
                         return {
                           type: "bubble",
                           body: {
@@ -193,7 +197,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                             contents: [
                               {
                                 type: 'text',
-                                text: item.message.S,
+                                text: `${item.message.S}, ${formattedSecondsToZone}`,
                               }
                             ]
                           },

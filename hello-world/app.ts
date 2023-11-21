@@ -131,7 +131,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
       }
     } else {
       /*
-      body: '{"destination":"U1f7351b944cb4b8c52529beeff107717","events":[{"type":"postback","postback":{"data":"你好嗎","params":{"datetime":"2023-11-08T21:21"}},"webhookEventId":"01HEQ76MN3HQAGCWK1B7SZFVNS","deliveryContext":{"isRedelivery":false},"timestamp":1699438875261,"source":{"type":"user","userId":"Uf653f8e04aae9441cc3d8e6a41cfe28a"},"replyToken":"9636527508bd4885999d1698450a2188","mode":"active"}]}'
+      body: '{"destination":"U1f7351b944cb4b8c52529beeff107717","events":[{type:"postback","postback":{"data":"你好嗎","params":{"datetime":"2023-11-08T21:21"}},"webhookEventId":"01HEQ76MN3HQAGCWK1B7SZFVNS","deliveryContext":{"isRedelivery":false},"timestamp":1699438875261,"source":{type:"user","userId":"Uf653f8e04aae9441cc3d8e6a41cfe28a"},"replyToken":"9636527508bd4885999d1698450a2188","mode":"active"}]}'
       */
       
       /*
@@ -180,19 +180,38 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                 replyToken: firstEvent.replyToken as string,
                 messages: [
                   {
-                    type: 'template',
-                    altText: 'Confirm alt text',
-                    template: {
-                      type: 'buttons',
-                      text: '所有的預約提醒',
-                      actions: sortedScheduledReminders.map((item) => {
-                        const seconds = item.scheduled_at.N as string;
-                        const secondsToZone = DateTime.fromSeconds(parseInt(seconds)).setZone('Australia/Sydney')
-                        const formattedSecondsToZone = secondsToZone.toFormat('dd/MM H:mm');
+                    type: "flex",
+                    altText: "test",
+                    contents: {
+                      type: "carousel",
+                      contents: sortedScheduledReminders.map((item) => {
                         return {
-                          type: 'postback',
-                          label: `${item.message.S.substring(0, 3)}...(${formattedSecondsToZone})`,
-                          data: `action=edit_reminder&pk=${item.pk.S}&sk=${item.sk.S}`
+                          type: "bubble",
+                          body: {
+                            type: 'box',
+                            layout: 'horizontal',
+                            contents: [
+                              {
+                                type: 'text',
+                                text: item.message.S,
+                              }
+                            ]
+                          },
+                          footer: {
+                            type: 'box',
+                            layout: 'horizontal',
+                            contents: [
+                              {
+                                type: 'button',
+                                action: {
+                                  type: 'postback',
+                                  label: '完成',
+                                  displayText: '完成',
+                                  data: `action=update_reminder_status&user_id=${item.pk.S.split('#')[1]}&reminder_id=${item.sk.S.split('#')[1]}&status=completed`
+                                }
+                              }
+                            ]
+                          }
                         }
                       })
                     }

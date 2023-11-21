@@ -156,7 +156,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
           console.log(firstEvent);
           //console.log(getUser);
           //console.log(getUser.Item?.scheduled_reminders_count < 3);
-          if (firstEvent.message.text === 'list-reminders') {
+          if (firstEvent.message.text === '查詢提醒') {
             const scheduledReminders = await DynamoDBCRUDs.scheduledReminders(userId);
             //console.log(scheduledReminders);
             scheduledReminders.Items?.map((item) => console.log(item.scheduled_at));
@@ -200,7 +200,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                 ]
               })
             }
-          } else if (firstEvent.message.text === 'add-reminder') {
+          } else if (firstEvent.message.text === '新增提醒') {
             await lineClient.replyMessage({
               replyToken: firstEvent.replyToken as string,
               messages: [

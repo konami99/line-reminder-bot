@@ -36,6 +36,39 @@ const qstashClient = new Client({
   token: '',
 });
 
+const englishDayToChineseDay = (input: string) => {
+  switch(input) {
+    case 'Monday': {
+      return '一'
+      break;
+    }
+    case 'Tuesday': {
+      return '二'
+      break;
+    }
+    case 'Wednesday': {
+      return '三'
+      break;
+    }
+    case 'Thursday': {
+      return '四'
+      break;
+    }
+    case 'Friday': {
+      return '五'
+      break;
+    }
+    case 'Saturday': {
+      return '六'
+      break;
+    }
+    default: {
+      return '日'
+      break;
+    }
+  }
+}
+
 const stringToHash = (input: string) => {
   const pairs = input.split('&');
   var resultObject: Record<string, string> = {};
@@ -169,7 +202,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                 messages: [
                   {
                     type: 'text',
-                    text: '無'
+                    text: '目前無任何預約停醒'
                   }
                 ]
               })
@@ -187,30 +220,47 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                       contents: sortedScheduledReminders.map((item) => {
                         const seconds = item.scheduled_at.N as string;
                         const secondsToZone = DateTime.fromSeconds(parseInt(seconds)).setZone('Australia/Sydney')
-                        const formattedSecondsToZone = secondsToZone.toFormat('dd/MM H:mm');
+                        const day = englishDayToChineseDay(secondsToZone.toFormat('EEEE'))
+                        const formattedSecondsToZone = secondsToZone.toFormat(`M月d日(${day}) h:mm a`);
 
                         return {
                           type: "bubble",
                           body: {
                             type: 'box',
-                            layout: 'horizontal',
+                            layout: 'vertical',
                             contents: [
                               {
                                 type: 'text',
-                                text: `${item.message.S}, ${formattedSecondsToZone}`,
+                                text: item.message.S,
+                                weight: 'bold',
+                                size: 'xl',
+                              },
+                              {
+                                type: 'box',
+                                layout: 'vertical',
+                                margin: 'lg',
+                                spacing: 'sm',
+                                contents: [
+                                  {
+                                    type: 'text',
+                                    text: formattedSecondsToZone,
+                                    wrap: true,
+                                    size: 'sm'
+                                  }
+                                ]
                               }
                             ]
                           },
                           footer: {
                             type: 'box',
-                            layout: 'horizontal',
+                            layout: 'vertical',
                             contents: [
                               {
                                 type: 'button',
                                 action: {
                                   type: 'postback',
-                                  label: '完成',
-                                  displayText: '完成',
+                                  label: '取消提醒',
+                                  displayText: '取消提醒',
                                   data: `action=update_reminder_status&user_id=${item.pk.S.split('#')[1]}&reminder_id=${item.sk.S.split('#')[1]}&status=completed`
                                 }
                               }
@@ -251,7 +301,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                       actions: [
                         { 
                           type: 'datetimepicker',
-                          label: '點我選擇時間',
+                          label: '輸入時間',
                           data: message,
                           mode: 'datetime'
                         },
@@ -278,7 +328,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
 
           const postbackData = firstEvent.postback.data;
           const resultObject = stringToHash(postbackData);
-          console.log(resultObject);
+          console.log(postbackData);
 
           if (resultObject.action != undefined && resultObject.action == 'update_reminder_status') {
             console.log('update_reminder_status');
@@ -290,7 +340,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
               messages: [
                 {
                   type: 'text',
-                  text: '以標記為完成'
+                  text: '好的, 取消提醒'
                 }
               ]
             })

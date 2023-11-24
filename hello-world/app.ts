@@ -257,7 +257,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                 messages: [
                   {
                     type: "flex",
-                    altText: "test",
+                    altText: "列出所有提醒",
                     contents: {
                       type: "carousel",
                       contents: sortedScheduledReminders.map((item) => {
@@ -311,6 +311,26 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                           }
                         }
                       })
+                    },
+                    quickReply: {
+                      items: [
+                        {
+                          type: 'action',
+                          action: {
+                            type: 'message',
+                            label: '新增提醒',
+                            text: '新增提醒',
+                          }
+                        },
+                        {
+                          type: 'action',
+                          action: {
+                            type: 'message',
+                            label: '查詢所有提醒',
+                            text: '查詢所有提醒',
+                          }
+                        }
+                      ]
                     }
                   }
                 ]

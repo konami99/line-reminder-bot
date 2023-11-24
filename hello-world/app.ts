@@ -126,7 +126,27 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             messages: [
               {
                 type: 'text',
-                text: `提醒您: ${message}`
+                text: `提醒您: ${message}`,
+                quickReply: {
+                  items: [
+                    {
+                      type: 'action',
+                      action: {
+                        type: 'message',
+                        label: '新增提醒',
+                        text: '新增提醒',
+                      }
+                    },
+                    {
+                      type: 'action',
+                      action: {
+                        type: 'message',
+                        label: '查詢所有提醒',
+                        text: '查詢所有提醒',
+                      }
+                    }
+                  ]
+                }
               }
             ]
           })
@@ -198,7 +218,27 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                 messages: [
                   {
                     type: 'text',
-                    text: '目前無任何預約停醒'
+                    text: '目前無任何預約停醒',
+                    quickReply: {
+                      items: [
+                        {
+                          type: 'action',
+                          action: {
+                            type: 'message',
+                            label: '新增提醒',
+                            text: '新增提醒',
+                          }
+                        },
+                        {
+                          type: 'action',
+                          action: {
+                            type: 'message',
+                            label: '查詢所有提醒',
+                            text: '查詢所有提醒',
+                          }
+                        }
+                      ]
+                    }
                   }
                 ]
               })
@@ -276,6 +316,18 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                 {
                   type: 'text',
                   text: '請輸入提醒事項',
+                  quickReply: {
+                    items: [
+                      {
+                        type: 'action',
+                        action: {
+                          type: 'message',
+                          label: '查詢所有提醒',
+                          text: '查詢所有提醒',
+                        }
+                      }
+                    ]
+                  }
                 }
               ]
             });
@@ -303,6 +355,18 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                         },
                       ],
                     },
+                    quickReply: {
+                      items: [
+                        {
+                          type: 'action',
+                          action: {
+                            type: 'message',
+                            label: '查詢所有提醒',
+                            text: '查詢所有提醒',
+                          }
+                        }
+                      ]
+                    }
                   }
                 ]
               });
@@ -312,7 +376,19 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                 messages: [
                   {
                     type: 'text',
-                    text: '您已經超過額度(3)'
+                    text: '您已經超過額度(3)',
+                    quickReply: {
+                      items: [
+                        {
+                          type: 'action',
+                          action: {
+                            type: 'message',
+                            label: '查詢所有提醒',
+                            text: '查詢所有提醒',
+                          }
+                        }
+                      ]
+                    }
                   }
                 ]
               });
@@ -336,7 +412,27 @@ export const lambdaHandler = async (event: any): Promise<any> => {
               messages: [
                 {
                   type: 'text',
-                  text: '好的, 取消提醒'
+                  text: '好的, 取消提醒',
+                  quickReply: {
+                    items: [
+                      {
+                        type: 'action',
+                        action: {
+                          type: 'message',
+                          label: '新增提醒',
+                          text: '新增提醒',
+                        }
+                      },
+                      {
+                        type: 'action',
+                        action: {
+                          type: 'message',
+                          label: '查詢所有提醒',
+                          text: '查詢所有提醒',
+                        }
+                      }
+                    ]
+                  }
                 }
               ]
             })
@@ -437,7 +533,27 @@ export const lambdaHandler = async (event: any): Promise<any> => {
               messages: [
                 {
                   type: 'text',
-                  text: `好, 我會提醒您 "${text}"`
+                  text: `好, 我會提醒您 "${text}"`,
+                  quickReply: {
+                    items: [
+                      {
+                        type: 'action',
+                        action: {
+                          type: 'message',
+                          label: '新增提醒',
+                          text: '新增提醒',
+                        }
+                      },
+                      {
+                        type: 'action',
+                        action: {
+                          type: 'message',
+                          label: '查詢所有提醒',
+                          text: '查詢所有提醒',
+                        }
+                      }
+                    ]
+                  }
                 }
               ]
             });

@@ -17,7 +17,7 @@ export class DynamoDBCRUDs {
   static async insertUser(userId: string) {
 
     const client = new DynamoDBClient({
-      region: 'us-west-2' as string,
+      region: 'ap-northeast-2' as string,
     });
     const dbDocClient = DynamoDBDocumentClient.from(client);
     const created_at = parseInt(new Date().getTime().toString())
@@ -38,7 +38,7 @@ export class DynamoDBCRUDs {
 
   static async getUser(userId: string): Promise<GetCommandOutput> {
     const client = new DynamoDBClient({
-      region: 'us-west-2' as string,
+      region: 'ap-northeast-2' as string,
     });
     const dbDocClient = DynamoDBDocumentClient.from(client);
 
@@ -56,7 +56,7 @@ export class DynamoDBCRUDs {
 
   static async insertReminder(userId: string, reminderId: string, message: string, scheduled_at: number) {
     const client = new DynamoDBClient({
-      region: 'us-west-2' as string,
+      region: 'ap-northeast-2' as string,
     });
     const dbDocClient = DynamoDBDocumentClient.from(client);
     const created_at = parseInt(new Date().getTime().toString())
@@ -87,7 +87,7 @@ export class DynamoDBCRUDs {
     }
 
     const getClient = new DynamoDBClient({
-      region: 'us-west-2' as string,
+      region: 'ap-northeast-2' as string,
     });
     const reminder = await getClient.send(new GetItemCommand(params))
     return reminder;
@@ -105,7 +105,7 @@ export class DynamoDBCRUDs {
     };
 
     const getClient = new DynamoDBClient({
-      region: 'us-west-2' as string,
+      region: 'ap-northeast-2' as string,
     });
     const scheduledReminders = await getClient.send(new QueryCommand(queryItemParams))
     return scheduledReminders;
@@ -125,7 +125,7 @@ export class DynamoDBCRUDs {
     };
 
     const client = new DynamoDBClient({
-      region: 'us-west-2' as string,
+      region: 'ap-northeast-2' as string,
     });
 
     await client.send(new UpdateItemCommand(params))
@@ -145,7 +145,7 @@ export class DynamoDBCRUDs {
     };
 
     const client = new DynamoDBClient({
-      region: 'us-west-2' as string,
+      region: 'ap-northeast-2' as string,
     });
 
     await client.send(new UpdateItemCommand(params))

@@ -126,7 +126,14 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             messages: [
               {
                 type: 'text',
-                text: `提醒您: ${message}`,
+                text: `$ 提醒您: ${message}`,
+                emojis: [
+                  {
+                    index: 0,
+                    productId: '5ac22b23040ab15980c9b44d',
+                    emojiId: '131',
+                  }
+                ],
                 quickReply: {
                   items: [
                     {
@@ -205,7 +212,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
           console.log(firstEvent);
           //console.log(getUser);
           //console.log(getUser.Item?.scheduled_reminders_count < 3);
-          if (firstEvent.message.text === '查詢提醒') {
+          if (firstEvent.message.text === '查詢提醒' || firstEvent.message.text === '查詢所有提醒') {
             const scheduledReminders = await DynamoDBCRUDs.scheduledReminders(userId);
             //console.log(scheduledReminders);
             scheduledReminders.Items?.map((item) => console.log(item.scheduled_at));
@@ -255,7 +262,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                       type: "carousel",
                       contents: sortedScheduledReminders.map((item) => {
                         const seconds = item.scheduled_at.N as string;
-                        const secondsToZone = DateTime.fromSeconds(parseInt(seconds)).setZone('Australia/Sydney')
+                        const secondsToZone = DateTime.fromSeconds(parseInt(seconds)).setZone('Asia/Taipei')
                         const day = englishDayToChineseDay(secondsToZone.toFormat('EEEE'))
                         const formattedSecondsToZone = secondsToZone.toFormat(`M月d日(${day}) h:mm a`);
 
@@ -315,7 +322,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
               messages: [
                 {
                   type: 'text',
-                  text: '請輸入提醒事項',
+                  text: '請打開鍵盤輸入提醒事項',
                   quickReply: {
                     items: [
                       {
@@ -342,7 +349,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                 messages: [
                   {
                     type: 'template',
-                    altText: 'Confirm alt text',
+                    altText: `要什麼時候提醒您 "${message}"?`,
                     template: {
                       type: 'buttons',
                       text: `要什麼時候提醒您 "${message}"?`,
@@ -444,7 +451,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             const userId = reminder.Item?.pk.S?.split('#')[1] as string;
             const reminderId = reminder.Item?.sk.S?.split('#')[1] as string;
             const seconds = reminder.Item?.scheduled_at.N as string;
-            const secondsToZone = DateTime.fromSeconds(parseInt(seconds)).setZone('Australia/Sydney')
+            const secondsToZone = DateTime.fromSeconds(parseInt(seconds)).setZone('Asia/Taipei')
             const formattedSecondsToZone = secondsToZone.toFormat('dd/MM H:mm');
 
             await lineClient.pushMessage({
@@ -452,7 +459,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
               messages: [
                 {
                   type: 'template',
-                  altText: 'Confirm alt text',
+                  altText: '完成',
                   template: {
                     type: 'buttons',
                     text: `${reminder.Item?.message.S} 在${formattedSecondsToZone}`,
@@ -473,7 +480,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             const text = firstEvent.postback.data;
             const time = firstEvent.postback.params.datetime //2023-11-05T19:48
             const newUserId = firstEvent.source.userId;
-            const timeWithZone = DateTime.fromFormat(time, "yyyy-MM-dd'T'HH:mm", { zone: 'Australia/Sydney'} )
+            const timeWithZone = DateTime.fromFormat(time, "yyyy-MM-dd'T'HH:mm", { zone: 'Asia/Taipei'} )
             
             const getUserResult: GetCommandOutput = await DynamoDBCRUDs.getUser(newUserId)
             

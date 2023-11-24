@@ -14,6 +14,9 @@ import { DynamoDBDocumentClient, GetCommandOutput, PutCommand, UpdateCommand } f
 import { DynamoDBCRUDs } from './dynamodbQueries';
 import { ulid } from "ulid"
 
+// 604000 = 7days
+const QSTASH_THRESHOLD_SECONDS = 604000;
+
 /*
 const clientConfig: ClientConfig = {
   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN as string,
@@ -93,11 +96,11 @@ export const lambdaHandler = async (event: any): Promise<any> => {
     /*
     local
     */
-
+    
     const events = event["events"];
     const firstEvent = events[0];
     const jsonObject = firstEvent;
-
+    
     
     if (jsonObject?.type === 'qstash') {
       const userId = jsonObject.user_id;
@@ -132,8 +135,8 @@ export const lambdaHandler = async (event: any): Promise<any> => {
         }
       } else {
         const timeDiff = scheduledTimeInSeconds - nextTimeInSeconds;
-        if (timeDiff > 604000) {
-          const next_time_in_seconds = nextTimeInSeconds + 604000;
+        if (timeDiff > QSTASH_THRESHOLD_SECONDS) {
+          const next_time_in_seconds = nextTimeInSeconds + QSTASH_THRESHOLD_SECONDS;
 
           await qstashClient.publishJSON({
             topic: "reminders-tw",
@@ -144,7 +147,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
               reminder_id: reminderId,
               scheduled_time_in_seconds: scheduledTimeInSeconds,
               next_time_in_seconds,
-              message,
+              text: message,
             },
           });
         } else {
@@ -157,7 +160,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
               reminder_id: reminderId,
               scheduled_time_in_seconds: scheduledTimeInSeconds,
               next_time_in_seconds: scheduledTimeInSeconds,
-              message,
+              text: message,
             },
           });
         }
@@ -171,13 +174,6 @@ export const lambdaHandler = async (event: any): Promise<any> => {
       production
       */
       //const firstEvent = jsonObject.events[0];
-      
-
-      /*
-      local
-      */
-      //const events = event["events"];
-      //const firstEvent = events[0];
       
       switch (firstEvent.type) {
         case 'message':
@@ -286,7 +282,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
 
           } else {
             const getUser: GetCommandOutput = await DynamoDBCRUDs.getUser(userId)
-            if (!getUser.Item || getUser.Item?.scheduled_reminders_count < 3) {
+            if (!getUser.Item || getUser.Item?.scheduled_reminders_count < 100) {
               const message = firstEvent.message.text;
               
               await lineClient.replyMessage({
@@ -404,8 +400,8 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             const scheduledTimeInSeconds = timeWithZone.toSeconds();
 
             //604800 = 168 hours
-            if (scheduledTimeInSeconds - currentTimeInSeconds > 604000) {
-              const next_time_in_seconds = currentTimeInSeconds + 604000;
+            if (scheduledTimeInSeconds - currentTimeInSeconds > QSTASH_THRESHOLD_SECONDS) {
+              const next_time_in_seconds = currentTimeInSeconds + QSTASH_THRESHOLD_SECONDS;
 
               await qstashClient.publishJSON({
                 topic: "reminders-tw",

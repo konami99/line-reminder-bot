@@ -164,7 +164,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
         const timeDiff = scheduledTimeInSeconds - nextTimeInSeconds;
         if (timeDiff > QSTASH_THRESHOLD_SECONDS) {
           const next_time_in_seconds = nextTimeInSeconds + QSTASH_THRESHOLD_SECONDS;
-
+          /*
           await qstashClient.publishJSON({
             topic: "reminders-tw",
             notBefore: next_time_in_seconds,
@@ -177,7 +177,9 @@ export const lambdaHandler = async (event: any): Promise<any> => {
               text: message,
             },
           });
+          */
         } else {
+          /*
           await qstashClient.publishJSON({
             topic: "reminders-tw",
             notBefore: scheduledTimeInSeconds,
@@ -190,6 +192,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
               text: message,
             },
           });
+          */
         }
       }
     } else {
@@ -329,7 +332,15 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                             label: '查詢所有提醒',
                             text: '查詢所有提醒',
                           }
-                        }
+                        },
+                        {
+                          type: 'action',
+                          action: {
+                            type: 'uri',
+                            label: 'Pay',
+                            uri: process.env.PAYMENT_URI
+                          }
+                        },
                       ]
                     }
                   }
@@ -525,7 +536,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
             //604800 = 168 hours
             if (scheduledTimeInSeconds - currentTimeInSeconds > QSTASH_THRESHOLD_SECONDS) {
               const next_time_in_seconds = currentTimeInSeconds + QSTASH_THRESHOLD_SECONDS;
-
+              /*
               await qstashClient.publishJSON({
                 topic: "reminders-tw",
                 notBefore: next_time_in_seconds,
@@ -538,7 +549,9 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                   text,
                 },
               });
+              */
             } else {
+              /*
               await qstashClient.publishJSON({
                 topic: "reminders-tw",
                 notBefore: scheduledTimeInSeconds,
@@ -551,6 +564,7 @@ export const lambdaHandler = async (event: any): Promise<any> => {
                   text,
                 },
               });
+              */
             }
             
             

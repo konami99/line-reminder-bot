@@ -92,20 +92,15 @@ export const lambdaHandler = async (event: any): Promise<any> => {
       console.log('+++++++++++++++++++')
       console.log('charge.succeeded');
     }
-
-    /*
-    production
-    */
-    //const jsonObject = JSON.parse(event.body);
-    
-
-    /*
-    local
-    */
-    
-    
-    
     else {
+      /*
+      production
+      */
+      //const jsonObject = JSON.parse(event.body);
+
+      /*
+      local
+      */
       const events = event["events"];
       const firstEvent = events[0];
       const jsonObject = firstEvent;

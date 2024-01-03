@@ -28,3 +28,25 @@ Point the LINE Webhook URL to the ngrok.
 
 Now you can add the LINE Bot to your phone, start interacting with it. All the messages will be sent to your local LINE Bot.
 
+# Deploy to AWS
+
+```
+export AWS_PROFILE=
+sam build
+sam deploy --no-confirm-changeset
+```
+
+The deployment will create a DynamoDB table to store users and messages. When user wants to see all reminders, the Bot will query the DynamoDB.
+
+# How does the reminder work
+
+When you enter a text and date in the LINE Bot, a message will be sent to [QStash](https://upstash.com/) with the text and the date. Date is converted to epoch time in seconds. QStash is a messaging queue. You can set an attribute `notBefore`. `notBefore` is the time the message pops off the queue and be sent back to you.
+
+QStash Free Plan only supports 7 days of queuing. I worked around the limit by sending the messsage back to the queue every 7 days, until the desired time has reached.
+```
+if (scheduledTimeInSeconds === nextTimeInSeconds) {
+  // remind user
+} else {
+  // send message back to the queue
+}
+```

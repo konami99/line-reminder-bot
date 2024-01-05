@@ -50,3 +50,10 @@ if (scheduledTimeInSeconds === nextTimeInSeconds) {
   // send message back to the queue
 }
 ```
+
+# DynamoDB
+| Model  | pk | sk | GSI1pk | GSI1sk | | | | 
+| ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
+| User  | USER#user_id  | USER#user_id  | | | | scheduled_reminders_count | created_at |
+| Reminder  | UR#user_ud  | REMINDER#reminder_id  | UR#user_id  | status  | message | scheduled_at | created_at |
+

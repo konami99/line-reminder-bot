@@ -52,8 +52,17 @@ if (scheduledTimeInSeconds === nextTimeInSeconds) {
 ```
 
 # DynamoDB
-| Model  | pk | sk | GSI1pk | GSI1sk | | | | 
+| Model  | pk | sk | gsi1pk | gsi1sk | | | | 
 | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
 | User  | USER#user_id  | USER#user_id  | | | | scheduled_reminders_count | created_at |
 | Reminder  | UR#user_ud  | REMINDER#reminder_id  | UR#user_id  | status  | message | scheduled_at | created_at |
 
+Access Patterns
+
+1. get total count of scheduled reminders by user
+2. get scheduled reminders by user and ordered by scheduled_at
+3. insert reminder
+4. update reminder status
+5. insert user
+6. get user
+7. update user's reminder count
